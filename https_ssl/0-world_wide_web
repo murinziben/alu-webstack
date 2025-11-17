@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Script to display DNS info for subdomains
+
+domain=$1
+subdomains=("www" "lb-01" "web-01" "web-02")
+
+# Check if domain was provided
+if [ -z "$domain" ]; then
+    echo "Usage: $0 domain_name [subdomain]"
+    exit 1
+fi
+
+check_subdomain() {
+    local sub=$1
+    echo -n "The subdomain $sub"
+    dig "$sub.$domain" | grep -A1 'ANSWER SECTION:' | tail -n 1 | awk '{print " is a " $4 " record and points to " $5}'
+}
+
+if [ $# -eq 2 ]; then
+    check_subdomain "$2"
+else
+    for sub in "${subdomains[@]}"; do
+        check_subdomain "$sub"
+    done
+fi
