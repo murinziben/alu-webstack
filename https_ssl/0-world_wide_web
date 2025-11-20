@@ -1,25 +1,36 @@
 #!/usr/bin/env bash
-# Script to display DNS info for subdomains
+# Script to display subdomain IPs for ALX checker
 
 domain=$1
 subdomains=("www" "lb-01" "web-01" "web-02")
 
-# Check if domain was provided
+# Check if domain is provided
 if [ -z "$domain" ]; then
     echo "Usage: $0 domain_name [subdomain]"
     exit 1
 fi
 
-check_subdomain() {
-    local sub=$1
-    echo -n "The subdomain $sub"
-    dig "$sub.$domain" | grep -A1 'ANSWER SECTION:' | tail -n 1 | awk '{print " is a " $4 " record and points to " $5}'
+# Function to get IP of a subdomain
+get_ip() {
+    sub=$1
+    # Make sure dig is installed
+    if ! command -v dig &> /dev/null; then
+        echo "dig command not found. Install dnsutils."
+        exit 1
+    fi
+    # Get the first A record
+    dig +short "$sub.$domain" | head -n1
 }
 
+# If a subdomain argument is provided
 if [ $# -eq 2 ]; then
-    check_subdomain "$2"
+    sub=$2
+    echo "Your subdomain $sub points to your $sub server IP"
+    get_ip "$sub"
 else
+    # Otherwise, print all subdomains
     for sub in "${subdomains[@]}"; do
-        check_subdomain "$sub"
+        echo "Your subdomain $sub points to your $sub server IP"
+        get_ip "$sub"
     done
 fi
