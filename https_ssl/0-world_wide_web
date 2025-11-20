@@ -11,17 +11,14 @@ if [ -z "$domain" ]; then
 fi
 
 check_subdomain() {
-    sub=$1
-    # Get the A record IP directly
-    ip=$(dig +short "$sub.$domain" | head -n1)
-    echo "$ip"
+    local sub=$1
+    echo -n "The subdomain $sub"
+    dig "$sub.$domain" | grep -A1 'ANSWER SECTION:' | tail -n 1 | awk '{print " is a " $4 " record and points to " $5}'
 }
 
-# If a second argument is provided, only check that subdomain
 if [ $# -eq 2 ]; then
     check_subdomain "$2"
 else
-    # Otherwise, check all subdomains
     for sub in "${subdomains[@]}"; do
         check_subdomain "$sub"
     done
