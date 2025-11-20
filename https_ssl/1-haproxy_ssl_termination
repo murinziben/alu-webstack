@@ -1,26 +1,44 @@
-# Nginx SSL Termination Configuration
-# Equivalent to HAproxy SSL termination setup
-# This configuration listens on port 443, terminates SSL, and forwards to backend servers
+# HAproxy SSL Termination Configuration
+
+# Global settings
+global
+    log /dev/log    local0
+    log /dev/log    local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+    maxconn 2000
+
+# Default settings
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5000ms
+    timeout client  50000ms
+    timeout server  50000ms
+    errorfile 400 /etc/haproxy/errors/400.http
+    errorfile 403 /etc/haproxy/errors/403.http
+    errorfile 408 /etc/haproxy/errors/408.http
+    errorfile 500 /etc/haproxy/errors/500.http
+    errorfile 502 /etc/haproxy/errors/502.http
+    errorfile 503 /etc/haproxy/errors/503.http
+    errorfile 504 /etc/haproxy/errors/504.http
+
+# Frontend for HTTPS
+frontend https_front
+    bind *:443 ssl crt /etc/letsencrypt/live/murinziben.tech/fullchain.pem \
+                        crt /etc/letsencrypt/live/murinziben.tech/privkey.pem
+    mode http
+    default_backend web_backends
 
 # Backend web servers
-upstream web-backend {
-    server 3.87.65.230:80;
-    server 3.88.145.59:80;
-}
-
-# HTTP to HTTPS redirect
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name murinziben.tech www.murinziben.tech;
-    return 301 https://$server_name$request_uri;
-}
-
-# HTTPS server with SSL termination
-server {
-    listen 443 ssl http2 default_server;
-    listen [::]:443 ssl http2 default_server;
-    server_name murinziben.tech www.murinziben.tech;
-
-    # SSL Certificate paths
-    ssl_certificate /etc/letsencrypt/live/kez
+backend web_backends
+    mode http
+    balance roundrobin
+    server web-01 3.87.65.230:80 check
+    server web-02 3.88.145.59:80 check
