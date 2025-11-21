@@ -1,25 +1,38 @@
 #!/usr/bin/env bash
-# Script to display DNS info for subdomains
+# Script to display information about domain subdomains
+
+# Ignore shellcheck warning SC2086
+# shellcheck disable=SC2086
+
+display_info() {
+    subdomain=$1
+    domain=$2
+    full_domain="${subdomain}.${domain}"
+
+    # Run dig and extract type and destination using awk
+    dig_output=$(dig $full_domain +short)
+    record_type=$(dig $full_domain | awk '/ANSWER SECTION/{getline; print $4}')
+    destination=$(echo "$dig_output" | tail -n1)
+
+    if [[ -n "$record_type" && -n "$destination" ]]; then
+        echo "The subdomain ${subdomain} is a ${record_type} record and points to ${destination}"
+    else
+        echo "No record found for ${full_domain}"
+    fi
+}
 
 domain=$1
-subdomains=("www" "lb-01" "web-01" "web-02")
+subdomain=$2
 
-# Check if domain was provided
-if [ -z "$domain" ]; then
-    echo "Usage: $0 domain_name [subdomain]"
+if [[ -z "$domain" ]]; then
+    echo "Usage: $0 domain [subdomain]"
     exit 1
 fi
 
-check_subdomain() {
-    local sub=$1
-    echo -n "The subdomain $sub"
-    dig "$sub.$domain" | grep -A1 'ANSWER SECTION:' | tail -n 1 | awk '{print " is a " $4 " record and points to " $5}'
-}
-
-if [ $# -eq 2 ]; then
-    check_subdomain "$2"
-else
-    for sub in "${subdomains[@]}"; do
-        check_subdomain "$sub"
+if [[ -z "$subdomain" ]]; then
+    for s in www lb-01 web-01 web-02; do
+        display_info $s $domain
     done
+else
+    display_info $subdomain $domain
 fi
