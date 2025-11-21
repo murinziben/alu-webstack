@@ -30,5 +30,5 @@ frontend http_in
 backend webservers
     mode http
     balance roundrobin
-    server web01 54.234.228.94:80 check
-    server web02 3.82.113.10:80 check
+    server web01 3.87.65.230:80 check
+    server web02 3.88.145.59:80 check
